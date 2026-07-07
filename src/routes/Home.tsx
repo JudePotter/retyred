@@ -157,7 +157,7 @@ function StatsBar() {
       paddingTop: 40 + 56, paddingLeft: 24, paddingRight: 24,
       ...angleCut('up'),
     }}>
-      <div style={{
+      <div className="stats-grid" style={{
         maxWidth: 1280, margin: '0 auto',
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
@@ -167,6 +167,15 @@ function StatsBar() {
           <CountStat key={s.label} {...s} delay={i * 0.1} divider={i < stats.length - 1} />
         ))}
       </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; row-gap: 28px !important; }
+          .stats-grid > div { border-right: none !important; }
+          .stats-grid > div:nth-child(odd) { border-right: 1px solid rgba(255,255,255,0.3) !important; }
+          .stats-grid > div:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,0.3) !important; padding-bottom: 20px !important; }
+          .stats-grid .stat-num { font-size: 30px !important; }
+        }
+      `}</style>
     </section>
   )
 }
@@ -206,7 +215,7 @@ function CountStat({ num, label, google, delay, divider }: {
       textAlign: 'center', padding: '0 16px',
       borderRight: divider ? `1px solid rgba(255,255,255,0.3)` : 'none',
     }}>
-      <div style={{ ...numeral(clamp(40, 5, 60), WHITE) }}>{displayed}</div>
+      <div className="stat-num" style={{ ...numeral(clamp(40, 5, 60), WHITE) }}>{displayed}</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
         {google && <GoogleG size={16} />}
         <span style={{ ...body(13, WHITE, 600), letterSpacing: '0.12em', textTransform: 'uppercase' }}>
@@ -261,10 +270,23 @@ const TILE_WIDTH = 300
 const TILE_HEIGHT = 400
 const TILE_GAP = 20
 
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= breakpoint)
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`)
+    const onChange = () => setIsMobile(mq.matches)
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [breakpoint])
+  return isMobile
+}
+
 function Services() {
   const [selected, setSelected] = useState<number | null>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const drag = useRef({ isDown: false, startX: 0, scrollLeft: 0, dragged: false })
+  const isMobile = useIsMobile()
 
   const onPointerDown = (e: React.PointerEvent) => {
     const el = trackRef.current
@@ -307,9 +329,18 @@ function Services() {
           <h2 style={{ ...display(clamp(36, 5, 68), DEEP_BLACK), marginBottom: 12 }}>
             Everything your tyres need
           </h2>
-          <p style={{ ...body(15, GREY_TEXT), marginBottom: 40, maxWidth: 460 }}>
-            Drag to scroll · Click a tile to learn more.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }}>
+            <p style={{ ...body(15, GREY_TEXT), maxWidth: 460, margin: 0 }}>
+              Drag to scroll · Click a tile to learn more.
+            </p>
+            <motion.span
+              animate={{ x: [0, 6, 0] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ display: 'flex' }}
+            >
+              <ChevronRight size={16} color={ORANGE} />
+            </motion.span>
+          </div>
         </FadeUp>
       </div>
 
@@ -335,6 +366,7 @@ function Services() {
             {...s}
             index={i}
             isOpen={selected === i}
+            isMobile={isMobile}
             onToggle={() => {
               if (drag.current.dragged) return
               setSelected(sel => sel === i ? null : i)
@@ -352,21 +384,23 @@ function Services() {
   )
 }
 
-function ServiceTile({ title, body: bodyText, detail, cta, href, index, isOpen, onToggle }: {
+function ServiceTile({ title, body: bodyText, detail, cta, href, index, isOpen, isMobile, onToggle }: {
   title: string; body: string; detail: string; cta: string; href: string
-  index: number; isOpen: boolean; onToggle: () => void
+  index: number; isOpen: boolean; isMobile: boolean; onToggle: () => void
 }) {
   const [hovered, setHovered] = useState(false)
   const isRoute = href.startsWith('/mobile')
   const num = String(index + 1).padStart(2, '0')
+  const openWidth = isMobile ? TILE_WIDTH : TILE_WIDTH * 2
+  const openHeight = isMobile ? TILE_HEIGHT + 180 : TILE_HEIGHT
 
   return (
     <motion.div
       initial={{ y: 30, opacity: 0 }}
       whileInView={{ y: 0, opacity: 1 }}
       viewport={{ once: true, margin: '-60px' }}
-      animate={{ width: isOpen ? TILE_WIDTH * 2 : TILE_WIDTH }}
-      transition={{ delay: index * 0.06, duration: 0.5, ease: EASE, width: { duration: 0.5, ease: EASE_SHARP } }}
+      animate={{ width: isOpen ? openWidth : TILE_WIDTH, height: isOpen ? openHeight : TILE_HEIGHT }}
+      transition={{ delay: index * 0.06, duration: 0.5, ease: EASE, width: { duration: 0.5, ease: EASE_SHARP }, height: { duration: 0.5, ease: EASE_SHARP } }}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       onClick={onToggle}
