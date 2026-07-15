@@ -4,6 +4,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './styles/global.css'
 import Home from './routes/Home'
 import MobileFitting from './routes/MobileFitting'
+import { inject } from '@vercel/analytics'
+inject()
+
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
