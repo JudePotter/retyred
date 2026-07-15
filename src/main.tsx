@@ -5,6 +5,7 @@ import './styles/global.css'
 import Home from './routes/Home'
 import MobileFitting from './routes/MobileFitting'
 import { inject } from '@vercel/analytics'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 inject()
 
 
@@ -16,5 +17,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/mobile-fitting" element={<MobileFitting />} />
       </Routes>
     </BrowserRouter>
+    <SpeedInsights />
   </React.StrictMode>
 )
